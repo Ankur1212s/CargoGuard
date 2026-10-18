@@ -1,21 +1,39 @@
-﻿# Python
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Binaries & Executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.db
 *.sqlite3
 .env
+.env.local
 venv/
 .venv/
 
-# Arduino
+# Arduino / PlatformIO
 *.hex
 *.bin
 *.elf
-build/
+.pio/
 
 # OS / Editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.log
+
+# Scratch & Test
+test_payload.json
