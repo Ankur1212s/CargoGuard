@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SENTINEL-4G | Tactical Asset Tracking & C2 Defense Operations",
-  description: "24/7 Military-grade remote asset tracking, perimeter security surveillance, and telemetry command center.",
+  title: "CargoGuard | Military-Grade Cargo & Tactical Vehicle Tracking System",
+  description: "24/7 Military-grade remote cargo vehicle tracking, perimeter tamper surveillance, and telemetry monitoring.",
 };
 
 export default function RootLayout({

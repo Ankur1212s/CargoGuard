@@ -10,7 +10,7 @@
 // 2. Telemetry Ingestion Endpoint:
 const char* SERVER_URL = "https://esp32-sentinel-monitor-187t-ankur1212s.vercel.app/api/readings";
 
-#define UNIT_CALLSIGN         "UNIT-01"
+#define UNIT_CALLSIGN         "CARGOGUARD-01"
 #define UPLOAD_INTERVAL_MS    7000   // Telemetry upload interval (7 seconds)
 #define SMS_COOLDOWN_MS       30000  // Minimum cooldown between SMS alerts (30 seconds)
 // ======================================================
@@ -34,10 +34,10 @@ unsigned long lastSmsTime = 0;
 unsigned long lastModemRetry = 0;
 unsigned long lastLbsCheck = 0;
 
-// Default deployment: Rashtriya Raksha University (RRU), Lavad, Dahegam
+// Default vehicle location: Rashtriya Raksha University (RRU), Lavad, Dahegam
 float currentLat = 23.154455;
 float currentLon = 72.885000;
-String locationSource = "RRU-BASE";
+String locationSource = "RRU-VEHICLE";
 
 bool detectMotion() {
   return digitalRead(PIR_PIN) == HIGH;
@@ -158,7 +158,7 @@ void initModemNetwork() {
   updateCellularLBS();
 
   Serial.println("[BOOT] Modem network online and ready!");
-  sendSMS("✅ SENTINEL-4G: System Online via Hardware Serial!");
+  sendSMS("✅ CARGOGUARD: Vehicle Tracking System Online!");
 }
 
 // Send SMS alert via A7670C on Serial
@@ -276,7 +276,7 @@ void setup() {
   Serial.begin(115200, SERIAL_8N1, MODEM_RX_PIN, MODEM_TX_PIN);
   delay(1000);
   Serial.println("\n==============================================");
-  Serial.println("       SENTINEL-4G TACTICAL SYSTEM BOOT       ");
+  Serial.println("       CARGOGUARD TACTICAL SYSTEM BOOT        ");
   Serial.println("==============================================");
 
   // 2. Hardware GPS (UART1) on GPIO 25 & 26
@@ -349,9 +349,9 @@ void loop() {
   if (isIntrusion) {
     if (modemOnline && (millis() - lastSmsTime > SMS_COOLDOWN_MS)) {
       Serial.println("[PIR] Motion detected! Firing alert SMS...");
-      String msg = "🚨 ALERT: Motion detected near sensor!\n";
-      msg += "PIR motion sensor triggered.\n";
-      msg += "Location: " + getGoogleMapsLink();
+      String msg = "🚨 CARGOGUARD ALERT: Cargo Container Tamper / Motion Detected!\n";
+      msg += "PIR motion sensor inside cargo triggered.\n";
+      msg += "Vehicle Location: " + getGoogleMapsLink();
       sendSMS(msg);
       lastSmsTime = millis();
     }

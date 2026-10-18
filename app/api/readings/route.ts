@@ -116,11 +116,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Default standby record centered on Rashtriya Raksha University, Lavad, Dahegam
+  // Default standby record centered on vehicle location at Rashtriya Raksha University, Lavad, Dahegam
   const defaultStandby: TelemetryReading = {
     id: "tlm-standby-rru",
     timestamp: new Date().toISOString(),
-    unit_id: "UNIT-01",
+    unit_id: "VEHICLE-01",
     dist: 0,
     temp: 27.0,
     hum: 52.0,

@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
-  Radio,
   Gauge,
   Thermometer,
   Droplets,
@@ -21,12 +20,7 @@ import {
   RefreshCw,
   Crosshair,
   Satellite,
-  Compass,
-  BatteryCharging,
-  Maximize2,
-  FileText,
-  Sliders,
-  CheckCircle2,
+  Truck,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -59,10 +53,10 @@ const TacticalMap = dynamic(() => import("./components/TacticalMap"), {
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin"></div>
         <div className="tracking-widest uppercase text-emerald-300">
-          INITIALIZING MILITARY SATELLITE RECON RECONNAISSANCE HUD...
+          INITIALIZING CARGOGUARD GEOSPATIAL VEHICLE TRACKING HUD...
         </div>
         <span className="text-[10px] text-slate-500 font-mono">
-          COORDINATES: 23.154455° N, 72.885000° E (RRU LAVAD)
+          VEHICLE POSITION: 23.154455° N, 72.885000° E (RRU LAVAD, DAHEGAM)
         </span>
       </div>
     </div>
@@ -85,11 +79,11 @@ interface Reading {
   signal_rssi?: number;
 }
 
-// Default Fallback: Rashtriya Raksha University, Lavad, Dahegam, Gandhinagar
+// Default Vehicle Coordinates: Rashtriya Raksha University, Lavad, Dahegam, Gandhinagar
 const RRU_DEFAULT_LAT = 23.154455;
 const RRU_DEFAULT_LON = 72.885000;
 
-export default function MilitaryAssetDashboard() {
+export default function CargoGuardDashboard() {
   const [readings, setReadings] = useState<Reading[]>([]);
   const [latest, setLatest] = useState<Reading | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(false);
@@ -97,7 +91,6 @@ export default function MilitaryAssetDashboard() {
   const [isArmActive, setIsArmActive] = useState<boolean>(true);
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(false);
   const [filterType, setFilterType] = useState<"ALL" | "BREACH" | "ENV">("ALL");
-  const [activeTab, setActiveTab] = useState<"LIVE" | "RAW">("LIVE");
 
   // Real-time Military Zulu (UTC) & Local (IST) Clocks
   const [zuluTime, setZuluTime] = useState<string>("");
@@ -105,7 +98,7 @@ export default function MilitaryAssetDashboard() {
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Play Tactical Two-tone Alert Siren via Web Audio API
+  // Play Tactical Alert Siren via Web Audio API
   const playTacticalSiren = () => {
     if (isAudioMuted || typeof window === "undefined") return;
     try {
@@ -134,7 +127,7 @@ export default function MilitaryAssetDashboard() {
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
     } catch (e) {
-      // Audio autoplay policy catch
+      // Audio policy catch
     }
   };
 
@@ -194,7 +187,7 @@ export default function MilitaryAssetDashboard() {
       .map((r) => [r.lat, r.lon] as [number, number]);
   }, [readings]);
 
-  // Chart Data Styling (Tactical Radar Spectrum)
+  // Chart Data Styling (Tactical Waveform)
   const chartData = useMemo(() => {
     const slice = readings.slice(-18);
     return {
@@ -215,7 +208,7 @@ export default function MilitaryAssetDashboard() {
           yAxisID: "y1",
         },
         {
-          label: "Ambient Temp (°C)",
+          label: "Cargo Ambient Temp (°C)",
           data: slice.map((r) => r.temp || 0),
           borderColor: "#f59e0b",
           backgroundColor: "transparent",
@@ -226,7 +219,7 @@ export default function MilitaryAssetDashboard() {
           yAxisID: "y",
         },
         {
-          label: "Relative Humidity (%)",
+          label: "Cargo Humidity (%)",
           data: slice.map((r) => r.hum || 0),
           borderColor: "#0ea5e9",
           backgroundColor: "transparent",
@@ -298,18 +291,18 @@ export default function MilitaryAssetDashboard() {
     const headers = [
       "ID",
       "Timestamp",
-      "Callsign",
-      "Motion_Alert",
+      "Vehicle_Callsign",
+      "Motion_Tamper_Alert",
       "Gas_PPM",
       "Temp_C",
       "Humidity_Pct",
-      "Latitude",
-      "Longitude",
+      "Vehicle_Latitude",
+      "Vehicle_Longitude",
     ];
     const rows = readings.map((r) => [
       r.id,
       r.timestamp,
-      r.unit_id || "UNIT-01",
+      r.unit_id || "VEHICLE-01",
       r.alert || r.motion ? "BREACH" : "SECURE",
       r.gas || 0,
       r.temp || 0,
@@ -325,7 +318,7 @@ export default function MilitaryAssetDashboard() {
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `SENTINEL_MISSION_LOG_${new Date().toISOString().slice(0, 10)}.csv`
+      `CARGOGUARD_MISSION_LOG_${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -345,17 +338,17 @@ export default function MilitaryAssetDashboard() {
 
   return (
     <div className="min-h-screen bg-[#04070c] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30">
-      {/* 1. TOP MILITARY CLASSIFICATION BANNER */}
+      {/* 1. TOP MILITARY LOGISTICS CLASSIFICATION BANNER */}
       <div className="bg-[#070e17] border-b border-emerald-500/30 text-[11px] font-mono px-4 py-1.5 flex flex-wrap items-center justify-between gap-3 text-slate-400">
         <div className="flex items-center gap-3">
           <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold tracking-wider">
-            RESTRICTED // DEFENSE C2
+            RESTRICTED // MILITARY ASSET LOGISTICS
           </span>
           <span className="hidden sm:inline text-slate-400">
-            OPERATION: <strong className="text-slate-200">SENTINEL-4G TACTICAL MATRIX</strong>
+            SYSTEM: <strong className="text-slate-200">CARGOGUARD TACTICAL TRANSIT MONITOR</strong>
           </span>
           <span className="hidden md:inline text-slate-400">
-            BASE: <strong className="text-emerald-400">RASHTRIYA RAKSHA UNIVERSITY (RRU)</strong> // SECTOR LAVAD-DAHEGAM
+            VEHICLE LOCATION: <strong className="text-emerald-400">RASHTRIYA RAKSHA UNIVERSITY (RRU)</strong> // SECTOR LAVAD-DAHEGAM
           </span>
         </div>
 
@@ -376,35 +369,35 @@ export default function MilitaryAssetDashboard() {
                 : "bg-emerald-950/60 border-emerald-500/40 text-emerald-400"
             }`}
           >
-            {isBreached ? "DEFCON 1 // BREACH" : "DEFCON 4 // NOMINAL"}
+            {isBreached ? "STATUS: TAMPER / BREACH" : "STATUS: CARGO SECURE"}
           </div>
         </div>
       </div>
 
-      {/* 2. COMMAND & CONTROL TACTICAL HEADER */}
+      {/* 2. CARGOGUARD TACTICAL VEHICLE HEADER */}
       <header className="border-b border-slate-800 bg-[#080d15]/90 backdrop-blur-md sticky top-0 z-50 px-4 lg:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          {/* Logo & Node Callsign */}
+          {/* Logo & Vehicle Callsign */}
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-lg bg-slate-900 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-              <Crosshair className="w-6 h-6 animate-pulse" />
+              <Truck className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-mono font-bold text-lg tracking-wider text-slate-100 flex items-center gap-2">
-                  SENTINEL-4G
+                  CARGOGUARD
                   <span className="text-[11px] font-normal px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-400">
-                    C2 COMMAND
+                    FLEET SECURITY
                   </span>
                 </h1>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-800/80 text-sky-300 border border-slate-700">
-                  {latest?.unit_id || "UNIT-01 [ALPHA]"}
+                  {latest?.unit_id || "VEHICLE #01"}
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-mono flex items-center gap-2 mt-0.5">
-                <span>Autonomous Perimeter Defense Node</span>
+                <span>Autonomous Transit Cargo Protection & Telemetry</span>
                 <span className="text-slate-600">|</span>
-                <span className="text-emerald-400">RRU Lavad Outpost</span>
+                <span className="text-emerald-400">Vehicle Sector: RRU Lavad, Dahegam</span>
               </p>
             </div>
           </div>
@@ -434,7 +427,7 @@ export default function MilitaryAssetDashboard() {
               </div>
             </div>
 
-            {/* Perimeter Arm Switch */}
+            {/* Cargo Tamper Surveillance Arm Switch */}
             <button
               onClick={() => setIsArmActive(!isArmActive)}
               className={`text-xs font-mono font-semibold px-3 py-2 rounded-lg border transition flex items-center gap-1.5 ${
@@ -446,12 +439,12 @@ export default function MilitaryAssetDashboard() {
               {isArmActive ? (
                 <>
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>PERIMETER ARMED</span>
+                  <span>CARGO ARMED</span>
                 </>
               ) : (
                 <>
                   <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  <span>STANDBY (DISARMED)</span>
+                  <span>CARGO STANDBY</span>
                 </>
               )}
             </button>
@@ -481,7 +474,7 @@ export default function MilitaryAssetDashboard() {
         </div>
       </header>
 
-      {/* 3. TACTICAL REAL-TIME INTRUSION ALERT STROBE BANNER */}
+      {/* 3. TACTICAL REAL-TIME CARGO INTRUSION ALERT BANNER */}
       {isBreached && (
         <div className="bg-rose-950/90 border-y-2 border-rose-500 text-rose-100 px-4 sm:px-8 py-3 breach-strobe shadow-[0_0_30px_rgba(239,68,68,0.5)]">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
@@ -491,13 +484,13 @@ export default function MilitaryAssetDashboard() {
               </div>
               <div>
                 <div className="font-mono font-bold text-sm tracking-wide text-white flex items-center gap-2">
-                  <span>🚨 CRITICAL PERIMETER BREACH DETECTED</span>
+                  <span>🚨 CARGO INTRUSION / CONTAINER TAMPER DETECTED</span>
                   <span className="text-[10px] bg-rose-900 border border-rose-400 px-2 py-0.5 rounded">
                     PIR SENSOR ACTIVE
                   </span>
                 </div>
                 <p className="text-xs text-rose-200 font-mono mt-0.5">
-                  Motion verified at <strong>Rashtriya Raksha University (RRU Lavad Campus)</strong>. GSM Alert SMS dispatched to +91 91552 70295.
+                  Motion verified inside cargo container at vehicle location: <strong>Rashtriya Raksha University (RRU Lavad Campus)</strong>. GSM Alert SMS dispatched to +91 91552 70295.
                 </p>
               </div>
             </div>
@@ -523,14 +516,14 @@ export default function MilitaryAssetDashboard() {
       <main className="max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-6 flex-1">
         {/* ROW 1: SENSOR TELEMETRY HUD (6 MILITARY PANELS) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-          {/* Panel 1: PIR Motion / Perimeter Radar */}
+          {/* Panel 1: Cargo PIR Motion / Tamper Radar */}
           <div
             className={`military-panel rounded-xl p-3.5 flex flex-col justify-between transition ${
               isBreached ? "military-panel-danger glow-danger border-rose-500" : "hover:border-emerald-500/60"
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">PIR RADAR</span>
+              <span className="tracking-wider">CARGO TAMPER</span>
               <Activity className={`w-4 h-4 ${isBreached ? "text-rose-400 animate-spin" : "text-emerald-400"}`} />
             </div>
             <div className="my-2.5">
@@ -542,7 +535,7 @@ export default function MilitaryAssetDashboard() {
                 {latest ? (isBreached ? "BREACH" : "SECURE") : "--"}
               </div>
               <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                {isBreached ? "Motion Confirmed" : "Perimeter Clear"}
+                {isBreached ? "Intrusion Verified" : "Container Sealed"}
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
@@ -553,10 +546,10 @@ export default function MilitaryAssetDashboard() {
             </div>
           </div>
 
-          {/* Panel 2: CBRN Atmospheric Gas (MQ-135) */}
+          {/* Panel 2: CBRN Hazardous Gas in Cargo (MQ-135) */}
           <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-emerald-500/60 transition">
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">CBRN / GAS</span>
+              <span className="tracking-wider">CARGO GAS / AIR</span>
               <Wind className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="my-2.5">
@@ -583,17 +576,17 @@ export default function MilitaryAssetDashboard() {
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
-              <span>MQ-135 TOXIN</span>
+              <span>MQ-135 SENSOR</span>
               <span className="text-emerald-400 font-semibold">
                 {(latest?.gas || 0) > 800 ? "HAZARD" : "NOMINAL"}
               </span>
             </div>
           </div>
 
-          {/* Panel 3: Thermal Surveillance (DHT11) */}
+          {/* Panel 3: Cargo Thermal Condition (DHT11) */}
           <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-amber-500/60 transition">
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">THERMAL</span>
+              <span className="tracking-wider">CARGO TEMP</span>
               <Thermometer className="w-4 h-4 text-amber-400" />
             </div>
             <div className="my-2.5">
@@ -608,15 +601,15 @@ export default function MilitaryAssetDashboard() {
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
-              <span>DHT11 AMBIENT</span>
-              <span className="text-amber-400">NORMAL</span>
+              <span>DHT11 SENSOR</span>
+              <span className="text-amber-400">OPTIMAL</span>
             </div>
           </div>
 
-          {/* Panel 4: Hygrometric Environment (DHT11 Hum) */}
+          {/* Panel 4: Cargo Humidity (DHT11 Hum) */}
           <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-sky-500/60 transition">
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">HUMIDITY</span>
+              <span className="tracking-wider">CARGO HUMIDITY</span>
               <Droplets className="w-4 h-4 text-sky-400" />
             </div>
             <div className="my-2.5">
@@ -627,19 +620,19 @@ export default function MilitaryAssetDashboard() {
                 <span className="text-xs font-mono text-slate-400">%</span>
               </div>
               <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                Moisture Content Nominal
+                Moisture Controlled
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
               <span>DEW PT: 16.4°C</span>
-              <span className="text-sky-400">CLEAR</span>
+              <span className="text-sky-400">DRY</span>
             </div>
           </div>
 
           {/* Panel 5: Power Bus & Cellular Carrier */}
           <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-emerald-500/60 transition">
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">POWER & RF</span>
+              <span className="tracking-wider">BATTERY & 4G</span>
               <Signal className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="my-2.5">
@@ -662,25 +655,25 @@ export default function MilitaryAssetDashboard() {
             </div>
           </div>
 
-          {/* Panel 6: Tactical Geo Target (Rashtriya Raksha University) */}
+          {/* Panel 6: Vehicle Geospatial Location */}
           <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-emerald-500/60 transition col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">DEPLOYMENT</span>
+              <span className="tracking-wider">VEHICLE LOCATION</span>
               <MapPin className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="my-2.5">
               <div className="text-xs font-mono font-bold text-emerald-300 truncate">
-                RRU LAVAD BASE
+                RRU LAVAD, DAHEGAM
               </div>
               <div className="text-[11px] font-mono text-slate-300 mt-0.5">
-                Dahegam, Gandhinagar
+                Gandhinagar Sector
               </div>
               <div className="text-[10px] font-mono text-slate-400 mt-0.5">
                 23.1545°N, 72.8850°E
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
-              <span>SATS: 8 FIX</span>
+              <span>GPS SATELLITES</span>
               <span className="text-emerald-400 font-bold">LOCKED</span>
             </div>
           </div>
@@ -694,12 +687,12 @@ export default function MilitaryAssetDashboard() {
               <div className="flex items-center gap-2">
                 <Satellite className="w-4 h-4 text-emerald-400" />
                 <h2 className="text-sm font-mono font-bold text-slate-100 tracking-wider">
-                  TACTICAL SATELLITE RECONNAISSANCE MAP
+                  TACTICAL VEHICLE SATELLITE TRACKING MAP
                 </h2>
               </div>
               <div className="flex items-center gap-2 font-mono text-xs">
                 <span className="text-[11px] text-slate-400">
-                  BASE: <strong className="text-emerald-400">RASHTRIYA RAKSHA UNIV, LAVAD</strong>
+                  VEHICLE POSITION: <strong className="text-emerald-400">RRU LAVAD, DAHEGAM</strong>
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
               </div>
@@ -710,7 +703,7 @@ export default function MilitaryAssetDashboard() {
               <TacticalMap
                 lat={activeLat}
                 lon={activeLon}
-                unitId={latest?.unit_id || "UNIT-01 [RRU-OUTPOST]"}
+                unitId={latest?.unit_id || "VEHICLE #01"}
                 isAlert={isBreached}
                 isOnline={isOnline}
                 trailCoords={trailCoords}
@@ -724,7 +717,7 @@ export default function MilitaryAssetDashboard() {
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-emerald-400" />
                 <h2 className="text-sm font-mono font-bold text-slate-100 tracking-wider">
-                  MULTI-SENSOR SPECTRUM ANALYZER
+                  CARGO ENVIRONMENT SPECTRUM ANALYZER
                 </h2>
               </div>
               <div className="text-xs font-mono text-slate-400">
@@ -778,10 +771,10 @@ export default function MilitaryAssetDashboard() {
               <Terminal className="w-5 h-5 text-emerald-400" />
               <div>
                 <h3 className="text-sm font-mono font-bold text-slate-100 tracking-wider">
-                  MISSION TELEMETRY AUDIT LOG
+                  CARGOGUARD TRANSIT & AUDIT LOG
                 </h3>
                 <p className="text-[11px] font-mono text-slate-400">
-                  Cryptographically indexed defense data stream // Sensor node verification
+                  Cryptographically indexed vehicle sensor stream // Tamper & environmental log
                 </p>
               </div>
             </div>
@@ -803,7 +796,7 @@ export default function MilitaryAssetDashboard() {
                     filterType === "BREACH" ? "bg-rose-950 text-rose-300 font-bold" : "text-slate-400"
                   }`}
                 >
-                  BREACHES
+                  TAMPER ALERTS
                 </button>
                 <button
                   onClick={() => setFilterType("ENV")}
@@ -833,19 +826,19 @@ export default function MilitaryAssetDashboard() {
                 <tr>
                   <th className="py-2.5 px-3">RECORD ID</th>
                   <th className="py-2.5 px-3">TIMESTAMP (UTC)</th>
-                  <th className="py-2.5 px-3">CALLSIGN</th>
-                  <th className="py-2.5 px-3">PIR RADAR</th>
+                  <th className="py-2.5 px-3">VEHICLE CALLSIGN</th>
+                  <th className="py-2.5 px-3">CARGO TAMPER</th>
                   <th className="py-2.5 px-3">GAS (MQ135)</th>
-                  <th className="py-2.5 px-3">THERMAL / HUM</th>
-                  <th className="py-2.5 px-3">DEPLOYMENT SECTOR</th>
-                  <th className="py-2.5 px-3 text-right">MISSION STATE</th>
+                  <th className="py-2.5 px-3">TEMP / HUM</th>
+                  <th className="py-2.5 px-3">VEHICLE LOCATION</th>
+                  <th className="py-2.5 px-3 text-right">SECURITY STATE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50 bg-[#060a12]/60 text-slate-300">
                 {filteredReadings.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-slate-500 font-mono">
-                      No matching tactical transmissions recorded in this buffer.
+                      No matching cargo transmissions recorded in this buffer.
                     </td>
                   </tr>
                 ) : (
@@ -866,18 +859,18 @@ export default function MilitaryAssetDashboard() {
                           {r.timestamp ? r.timestamp.replace("T", " ").slice(0, 19) : "--"}
                         </td>
                         <td className="py-2 px-3 font-semibold text-slate-100">
-                          {r.unit_id || "UNIT-01"}
+                          {r.unit_id || "VEHICLE #01"}
                         </td>
                         <td className="py-2 px-3">
                           {r.alert || r.motion ? (
                             <span className="text-rose-400 font-bold flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-                              MOTION DETECTED
+                              TAMPER DETECTED
                             </span>
                           ) : (
                             <span className="text-emerald-400 flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              CLEAR
+                              SEALED / SECURE
                             </span>
                           )}
                         </td>
@@ -914,7 +907,7 @@ export default function MilitaryAssetDashboard() {
       <footer className="border-t border-slate-800 bg-[#05080f] py-4 px-6 text-center text-xs font-mono text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div>
-            RESTRICTED DEFENSE APPLICATION // OPERATION SENTINEL-4G
+            RESTRICTED ASSET APPLICATION // CARGOGUARD MILITARY LOGISTICS SYSTEM
           </div>
           <div className="text-emerald-400/80">
             RASHTRIYA RAKSHA UNIVERSITY (RRU) AIC PROJECT &copy; 2026
