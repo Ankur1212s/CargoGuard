@@ -4,7 +4,7 @@
 
 A 24/7 cloud-native remote asset tracking, perimeter security surveillance, and multi-sensor environmental telemetry system built for defense and high-value asset monitoring.
 
-Powered by **ESP32**, **A7670C LTE Cat-1 cellular**, **NEO-6M GPS**, **HC-SR04 ultrasonic radar**, and **Next.js 14** hosted on Vercel.
+Powered by **ESP32**, **A7670C LTE Cat-1 cellular**, **NEO-6M GPS**, **PIR motion sensing**, and **Next.js 14** hosted on Vercel.
 
 ---
 
@@ -13,7 +13,7 @@ Powered by **ESP32**, **A7670C LTE Cat-1 cellular**, **NEO-6M GPS**, **HC-SR04 u
 - **24/7 Cloud Availability**: Fully deployed on Vercel with zero requirement for a local laptop, local Python server, or SSH tunnel.
 - **Direct 4G Telemetry Ingestion**: The ESP32 device posts telemetry directly over Airtel 4G to `https://<your-project>.vercel.app/api/readings`.
 - **Tactical Geospatial Satellite Map**: Real-time Leaflet GPS tracking with dark tactical radar overlay, asset breadcrumb trail, and direct coordinate navigation.
-- **Autonomous Perimeter Defense**: HC-SR04 ultrasonic radar with baseline calibration. Fires SMS alerts with Google Maps links on intrusion and triggers a DEFCON 1 visual alarm on the cloud dashboard.
+- **Autonomous Perimeter Defense**: PIR motion sensing on GPIO32. Fires SMS alerts with Google Maps links on intrusion and triggers a DEFCON 1 visual alarm on the cloud dashboard.
 - **NBC / Hazardous Environmental Sensing**: Real-time air quality index monitoring (MQ-135) and temperature/humidity diagnostics (DHT11).
 - **Hardened Power Subsystem**: 3.7V 7600mAh Li-ion battery pack with 1S 5A BMS protection, 3A IP2312 fast charger, and star-topology grounding.
 
@@ -39,11 +39,10 @@ Powered by **ESP32**, **A7670C LTE Cat-1 cellular**, **NEO-6M GPS**, **HC-SR04 u
 | **A7670C VBAT** | **Battery (+)** Direct | 1000µF 25V capacitor in parallel |
 | **NEO-6M TX** | **GPIO 25** | Hardware UART1 RX (9600 baud) |
 | **NEO-6M RX** | **GPIO 26** | Hardware UART1 TX (9600 baud) |
-| **HC-SR04 TRIG** | **GPIO 32** | Distance trigger pulse |
-| **HC-SR04 ECHO** | **GPIO 33** | Return pulse (via 1kΩ / 2kΩ divider) |
+| **PIR OUT** | **GPIO 32** | Digital motion signal |
 | **DHT11 DATA** | **GPIO 4** | Internal pull-up enabled |
 | **MQ135 A0** | **GPIO 34** | ADC1 Analog Input (0-3.3V) |
-| **5V Sensors Rail** | **MT3608 5V Out** | Powers ESP32 VIN, MQ135 heater, HC-SR04 |
+| **5V Sensors Rail** | **MT3608 5V Out** | Powers ESP32 VIN, MQ135 heater, PIR sensor |
 | **Star GND** | **Battery (-)** Direct | Common ground tied at battery negative |
 
 ---

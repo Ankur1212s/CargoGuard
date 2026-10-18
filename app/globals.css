@@ -4,21 +4,86 @@
 
 @layer base {
   body {
-    @apply bg-[#06090e] text-slate-200 antialiased font-sans;
+    @apply bg-[#04070c] text-slate-200 antialiased font-sans selection:bg-emerald-500/30 selection:text-emerald-200;
+    background-image: 
+      radial-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+      radial-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
   }
 }
 
-/* Tactical glowing accents */
+/* Military HUD Corner Accents */
+.military-panel {
+  position: relative;
+  background: linear-gradient(135deg, rgba(10, 16, 26, 0.85) 0%, rgba(6, 10, 17, 0.95) 100%);
+  border: 1px solid rgba(30, 58, 95, 0.45);
+}
+
+.military-panel::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid #10b981;
+  border-left: 2px solid #10b981;
+  pointer-events: none;
+}
+
+.military-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid #10b981;
+  border-right: 2px solid #10b981;
+  pointer-events: none;
+}
+
+.military-panel-danger::before {
+  border-color: #ef4444;
+}
+
+.military-panel-danger::after {
+  border-color: #ef4444;
+}
+
+/* Tactical HUD Glows */
 .glow-emerald {
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
 }
 
 .glow-danger {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
 }
 
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.25);
+}
+
+/* Radar Sweep Animation */
 .radar-sweep {
-  background: conic-gradient(from 0deg at 50% 50%, rgba(16, 185, 129, 0) 0deg, rgba(16, 185, 129, 0.3) 60deg, rgba(16, 185, 129, 0) 61deg);
+  background: conic-gradient(from 0deg at 50% 50%, rgba(16, 185, 129, 0) 0deg, rgba(16, 185, 129, 0.25) 60deg, rgba(16, 185, 129, 0) 61deg);
+  animation: radar-spin 4s linear infinite;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Tactical Breach Strobe */
+@keyframes tactical-strobe {
+  0%, 100% { opacity: 1; border-color: rgba(239, 68, 68, 0.9); }
+  50% { opacity: 0.4; border-color: rgba(239, 68, 68, 0.3); }
+}
+
+.breach-strobe {
+  animation: tactical-strobe 0.8s ease-in-out infinite;
 }
 
 /* Custom Tactical Scrollbar */
@@ -27,12 +92,12 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0c121d;
+  background: #04070c;
 }
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #10b981;
 }

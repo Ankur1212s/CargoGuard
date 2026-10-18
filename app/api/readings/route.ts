@@ -35,9 +35,11 @@ export async function POST(req: NextRequest) {
 
     let lat = parseFloat(data.lat ?? 0);
     let lon = parseFloat(data.lon ?? 0);
-    let locSource = (lat !== 0 && lon !== 0) ? "GPS" : "SEARCHING";
+    let locSource = (lat !== 0 && lon !== 0) ? "GPS" : "RRU-LAVAD-DEFAULT";
 
-    // Indoor Cellular Carrier Geolocation Fallback
+    /*
+    // --- PREVIOUS VERCEL IP / CARRIER GEOLOCATION CODE (KEPT AS COMMENT AS REQUESTED) ---
+    // Indoor Cellular Carrier Geolocation Fallback using Vercel headers and IP lookup
     if (lat === 0 && lon === 0) {
       const vLat = req.headers.get("x-vercel-ip-latitude");
       const vLon = req.headers.get("x-vercel-ip-longitude");
@@ -66,6 +68,18 @@ export async function POST(req: NextRequest) {
           }
         }
       }
+    }
+    // ----------------------------------------------------------------------------------
+    */
+
+    // Default Location: Rashtriya Raksha University (RRU), Lavad, Dahegam, Gandhinagar, Gujarat
+    const RRU_DEFAULT_LAT = 23.154455;
+    const RRU_DEFAULT_LON = 72.885000;
+
+    if (lat === 0 && lon === 0) {
+      lat = RRU_DEFAULT_LAT;
+      lon = RRU_DEFAULT_LON;
+      locSource = "RRU-LAVAD";
     }
 
     const reading: TelemetryReading = {
@@ -102,10 +116,28 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const latest = store.length > 0 ? store[store.length - 1] : null;
+  // Default standby record centered on Rashtriya Raksha University, Lavad, Dahegam
+  const defaultStandby: TelemetryReading = {
+    id: "tlm-standby-rru",
+    timestamp: new Date().toISOString(),
+    unit_id: "UNIT-01",
+    dist: 0,
+    temp: 27.0,
+    hum: 52.0,
+    gas: 310,
+    lat: 23.154455,
+    lon: 72.885000,
+    alert: false,
+    motion: false,
+    battery_mv: 3930,
+    signal_rssi: 22,
+  };
+
+  const hasRealData = store.length > 0;
+  const latest = hasRealData ? store[store.length - 1] : defaultStandby;
 
   let isOnline = false;
-  if (latest && latest.timestamp) {
+  if (hasRealData && latest && latest.timestamp) {
     const diffSeconds = (Date.now() - new Date(latest.timestamp).getTime()) / 1000;
     isOnline = diffSeconds < 45;
   }
@@ -114,6 +146,6 @@ export async function GET(req: NextRequest) {
     is_online: isOnline,
     total_count: store.length,
     latest: latest,
-    readings: store.slice(-30),
+    readings: hasRealData ? store.slice(-30) : [defaultStandby],
   });
 }

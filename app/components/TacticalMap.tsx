@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 
 interface TacticalMapProps {
@@ -11,6 +11,10 @@ interface TacticalMapProps {
   isOnline: boolean;
   trailCoords: [number, number][];
 }
+
+// Default Coordinates: Rashtriya Raksha University (RRU), Lavad, Dahegam, Gandhinagar, Gujarat
+const RRU_DEFAULT_LAT = 23.154455;
+const RRU_DEFAULT_LON = 72.885000;
 
 export default function TacticalMap({
   lat,
@@ -24,135 +28,265 @@ export default function TacticalMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const trailPolylineRef = useRef<L.Polyline | null>(null);
+  const perimeterCircleRef = useRef<L.Circle | null>(null);
+  const outerCircleRef = useRef<L.Circle | null>(null);
+  const [showRings, setShowRings] = useState<boolean>(true);
 
-  const hasCoords = Boolean(lat && lon && (lat !== 0 || lon !== 0));
-  const centerLat = hasCoords ? lat! : 20.5937;
-  const centerLon = hasCoords ? lon! : 78.9629;
-  const zoomLevel = hasCoords ? 15 : 5;
+  // If lat/lon are 0 or not provided, default to Rashtriya Raksha University, Lavad, Dahegam
+  const activeLat = (lat && lat !== 0) ? lat : RRU_DEFAULT_LAT;
+  const activeLon = (lon && lon !== 0) ? lon : RRU_DEFAULT_LON;
+  const isDefaultRRU = (!lat || lat === 0 || (Math.abs(activeLat - RRU_DEFAULT_LAT) < 0.0001 && Math.abs(activeLon - RRU_DEFAULT_LON) < 0.0001));
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
-        center: [centerLat, centerLon],
-        zoom: zoomLevel,
-        zoomControl: true,
+        center: [activeLat, activeLon],
+        zoom: 16,
+        zoomControl: false,
+        attributionControl: false,
       });
 
-      // Esri World Imagery (High-Resolution Satellite - 100% Free, NO API KEY NEEDED)
+      // Military-Grade Esri High-Resolution World Imagery
       L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
           attribution: "Esri Satellite Imagery",
-          maxZoom: 18,
+          maxZoom: 19,
         }
       ).addTo(map);
 
-      if (hasCoords) {
-        const iconHtml = `
-          <div class="relative flex items-center justify-center">
-            <div class="w-6 h-6 rounded-full ${
-              isAlert ? "bg-rose-500 animate-ping" : isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-400"
-            } opacity-75 absolute"></div>
-            <div class="w-3.5 h-3.5 rounded-full ${
-              isAlert ? "bg-rose-600 border-2 border-white" : isOnline ? "bg-emerald-500 border-2 border-zinc-950" : "bg-zinc-600 border-2 border-zinc-900"
-            } relative z-10 shadow-lg"></div>
-          </div>
-        `;
+      // Add zoom control at bottom right to avoid blocking top tactical telemetry
+      L.control.zoom({ position: "bottomright" }).addTo(map);
 
-        const customIcon = L.divIcon({
-          className: "custom-marker",
-          html: iconHtml,
+      // Custom Military Tactical Marker Icon
+      const buildMarkerIcon = (alert: boolean, online: boolean) => {
+        const ringColor = alert ? "border-rose-500 bg-rose-500/20" : online ? "border-emerald-400 bg-emerald-500/15" : "border-amber-400 bg-amber-500/15";
+        const dotColor = alert ? "bg-rose-500 animate-ping" : online ? "bg-emerald-400 animate-pulse" : "bg-amber-400";
+        const centerColor = alert ? "bg-rose-600 border-rose-200" : online ? "bg-emerald-500 border-white" : "bg-amber-500 border-zinc-900";
+
+        return L.divIcon({
+          className: "military-marker-reticle",
+          html: `
+            <div class="relative flex items-center justify-center w-12 h-12 -ml-3 -mt-3 pointer-events-none">
+              <!-- Outer Sonar Radar Ripple -->
+              <div class="absolute inset-0 rounded-full border ${ringColor} ${alert ? 'animate-ping' : 'animate-pulse'}"></div>
+              <!-- Mid Target Ring -->
+              <div class="absolute w-8 h-8 rounded-full border border-dashed ${alert ? 'border-rose-400' : 'border-emerald-400/80'} animate-spin" style="animation-duration: 8s;"></div>
+              <!-- Crosshair Lines -->
+              <div class="absolute w-10 h-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
+              <div class="absolute h-10 w-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
+              <!-- Center Laser Dot -->
+              <div class="w-3.5 h-3.5 rounded-full ${centerColor} border-2 relative z-20 shadow-[0_0_12px_rgba(16,185,129,0.8)]"></div>
+            </div>
+          `,
           iconSize: [24, 24],
           iconAnchor: [12, 12],
         });
+      };
 
-        const marker = L.marker([lat!, lon!], { icon: customIcon }).addTo(map);
-        marker.bindPopup(`<b>${unitId}</b><br>Lat: ${lat?.toFixed(5)}<br>Lon: ${lon?.toFixed(5)}`);
+      const marker = L.marker([activeLat, activeLon], {
+        icon: buildMarkerIcon(isAlert, isOnline),
+      }).addTo(map);
 
-        const polyline = L.polyline(trailCoords.length > 0 ? trailCoords : [[lat!, lon!]], {
+      marker.bindPopup(`
+        <div style="font-family: monospace; font-size: 11px; padding: 4px; color: #18181b;">
+          <div style="font-weight: bold; color: ${isAlert ? '#dc2626' : '#059669'}; border-bottom: 1px solid #e4e4e7; padding-bottom: 3px;">
+            ${isAlert ? '🚨 PERIMETER BREACH ACTIVE' : '🛡️ SENTINEL OUTPOST SECURE'}
+          </div>
+          <div style="margin-top: 4px;"><b>CALLSIGN:</b> ${unitId}</div>
+          <div><b>SECTOR:</b> RRU Lavad, Dahegam</div>
+          <div><b>LAT:</b> ${activeLat.toFixed(6)}° N</div>
+          <div><b>LON:</b> ${activeLon.toFixed(6)}° E</div>
+          <div><b>STATUS:</b> ${isOnline ? 'LIVE 4G LINK' : 'STANDBY MODE'}</div>
+        </div>
+      `);
+
+      // 100m Immediate Tactical Security Perimeter Ring
+      const circle100 = L.circle([activeLat, activeLon], {
+        radius: 100,
+        color: isAlert ? "#f43f5e" : "#10b981",
+        fillColor: isAlert ? "#f43f5e" : "#10b981",
+        fillOpacity: 0.08,
+        weight: 1.5,
+        dashArray: "4, 6",
+      }).addTo(map);
+
+      // 300m Outer Reconnaissance Surveillance Zone
+      const circle300 = L.circle([activeLat, activeLon], {
+        radius: 300,
+        color: "#0ea5e9",
+        fillColor: "#0ea5e9",
+        fillOpacity: 0.03,
+        weight: 1,
+        dashArray: "2, 8",
+      }).addTo(map);
+
+      // Patrol Trail Polyline
+      const polyline = L.polyline(
+        trailCoords.length > 0 ? trailCoords : [[activeLat, activeLon]],
+        {
           color: isAlert ? "#f43f5e" : "#10b981",
           weight: 3,
-          opacity: 0.9,
-        }).addTo(map);
+          opacity: 0.85,
+          dashArray: "3, 5",
+        }
+      ).addTo(map);
 
-        markerRef.current = marker;
-        trailPolylineRef.current = polyline;
-      }
-
+      markerRef.current = marker;
+      trailPolylineRef.current = polyline;
+      perimeterCircleRef.current = circle100;
+      outerCircleRef.current = circle300;
       mapInstanceRef.current = map;
     } else {
       const map = mapInstanceRef.current;
-      if (hasCoords) {
-        map.setView([lat!, lon!], 15, { animate: true });
+      map.setView([activeLat, activeLon], map.getZoom(), { animate: true });
 
-        const iconHtml = `
-          <div class="relative flex items-center justify-center">
-            <div class="w-6 h-6 rounded-full ${
-              isAlert ? "bg-rose-500 animate-ping" : isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-400"
-            } opacity-75 absolute"></div>
-            <div class="w-3.5 h-3.5 rounded-full ${
-              isAlert ? "bg-rose-600 border-2 border-white" : isOnline ? "bg-emerald-500 border-2 border-zinc-950" : "bg-zinc-600 border-2 border-zinc-900"
-            } relative z-10 shadow-lg"></div>
+      if (markerRef.current) {
+        markerRef.current.setLatLng([activeLat, activeLon]);
+        // Update popup content
+        markerRef.current.setPopupContent(`
+          <div style="font-family: monospace; font-size: 11px; padding: 4px; color: #18181b;">
+            <div style="font-weight: bold; color: ${isAlert ? '#dc2626' : '#059669'}; border-bottom: 1px solid #e4e4e7; padding-bottom: 3px;">
+              ${isAlert ? '🚨 PERIMETER BREACH ACTIVE' : '🛡️ SENTINEL OUTPOST SECURE'}
+            </div>
+            <div style="margin-top: 4px;"><b>CALLSIGN:</b> ${unitId}</div>
+            <div><b>SECTOR:</b> RRU Lavad, Dahegam</div>
+            <div><b>LAT:</b> ${activeLat.toFixed(6)}° N</div>
+            <div><b>LON:</b> ${activeLon.toFixed(6)}° E</div>
+            <div><b>STATUS:</b> ${isOnline ? 'LIVE 4G LINK' : 'STANDBY MODE'}</div>
           </div>
-        `;
+        `);
+      }
 
-        const customIcon = L.divIcon({
-          className: "custom-marker",
-          html: iconHtml,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+      if (perimeterCircleRef.current) {
+        perimeterCircleRef.current.setLatLng([activeLat, activeLon]);
+        perimeterCircleRef.current.setStyle({
+          color: isAlert ? "#f43f5e" : "#10b981",
+          fillColor: isAlert ? "#f43f5e" : "#10b981",
         });
+      }
 
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat!, lon!]);
-          markerRef.current.setIcon(customIcon);
-        } else {
-          markerRef.current = L.marker([lat!, lon!], { icon: customIcon }).addTo(map);
-        }
+      if (outerCircleRef.current) {
+        outerCircleRef.current.setLatLng([activeLat, activeLon]);
+      }
 
-        if (trailPolylineRef.current && trailCoords.length > 0) {
-          trailPolylineRef.current.setLatLngs(trailCoords);
-        }
+      if (trailPolylineRef.current && trailCoords.length > 0) {
+        trailPolylineRef.current.setLatLngs(trailCoords);
+        trailPolylineRef.current.setStyle({
+          color: isAlert ? "#f43f5e" : "#10b981",
+        });
       }
     }
-  }, [lat, lon, hasCoords, isAlert, isOnline, trailCoords, unitId]);
+  }, [activeLat, activeLon, isAlert, isOnline, trailCoords, unitId]);
+
+  // Center on RRU Base
+  const handleRecenter = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([activeLat, activeLon], 16, { duration: 1.2 });
+    }
+  };
+
+  // Toggle Range Rings
+  const handleToggleRings = () => {
+    const nextState = !showRings;
+    setShowRings(nextState);
+    if (perimeterCircleRef.current && outerCircleRef.current && mapInstanceRef.current) {
+      if (nextState) {
+        perimeterCircleRef.current.addTo(mapInstanceRef.current);
+        outerCircleRef.current.addTo(mapInstanceRef.current);
+      } else {
+        perimeterCircleRef.current.remove();
+        outerCircleRef.current.remove();
+      }
+    }
+  };
 
   return (
-    <div className="relative w-full h-full min-h-[420px] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
-      <div ref={mapContainerRef} className="w-full h-full min-h-[420px]" />
-      
-      <div className="absolute top-3 left-3 z-[1000] bg-zinc-950/85 backdrop-blur-md border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono shadow-lg">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${hasCoords && isOnline ? "bg-emerald-500 animate-ping" : "bg-zinc-500"}`}></span>
-          <span className="font-semibold text-zinc-200">
-            {hasCoords ? "SATELLITE POSITION: LOCKED" : "AWAITING FIELD GPS FIX"}
-          </span>
-        </div>
-        {hasCoords ? (
-          <div className="text-[11px] text-zinc-400 mt-0.5">
-            LAT: {lat?.toFixed(5)} | LON: {lon?.toFixed(5)}
-          </div>
-        ) : (
-          <div className="text-[10px] text-zinc-500 mt-0.5">
-            Unit powered off or searching for satellites
-          </div>
-        )}
+    <div className="relative w-full h-full min-h-[460px] rounded-xl overflow-hidden border border-emerald-500/30 bg-[#070b12] shadow-2xl">
+      {/* Tactical Corner Reticles */}
+      <div className="absolute top-2 left-2 z-[999] pointer-events-none text-emerald-500/70 text-xs font-mono font-bold leading-none select-none">
+        ┌─[HUD-SAT-01]
+      </div>
+      <div className="absolute top-2 right-2 z-[999] pointer-events-none text-emerald-500/70 text-xs font-mono font-bold leading-none select-none">
+        [RANGE: 100M-300M]─┐
+      </div>
+      <div className="absolute bottom-2 left-2 z-[999] pointer-events-none text-emerald-500/70 text-xs font-mono font-bold leading-none select-none">
+        └─[GRID: DAHEGAM]
+      </div>
+      <div className="absolute bottom-2 right-2 z-[999] pointer-events-none text-emerald-500/70 text-xs font-mono font-bold leading-none select-none">
+        [ESRI-IMAGERY]─┘
       </div>
 
-      {hasCoords && (
-        <div className="absolute bottom-3 right-3 z-[1000] bg-zinc-950/85 backdrop-blur-md border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-sky-400 hover:text-sky-300 shadow-md">
-          <a
-            href={`https://maps.google.com/?q=${lat},${lon}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 font-medium"
-          >
-            <span>Open in Google Maps ↗</span>
-          </a>
+      {/* Map Canvas */}
+      <div ref={mapContainerRef} className="w-full h-full min-h-[460px]" />
+
+      {/* Top Left: Target & Sector Information HUD */}
+      <div className="absolute top-3 left-3 z-[1000] bg-slate-950/90 backdrop-blur-md border border-emerald-500/40 rounded-lg p-2.5 text-xs font-mono shadow-2xl max-w-[280px] sm:max-w-xs">
+        <div className="flex items-center gap-2 border-b border-emerald-500/20 pb-1.5 mb-1.5">
+          <span className={`w-2 h-2 rounded-full ${isAlert ? "bg-rose-500 animate-ping" : isOnline ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}></span>
+          <span className="font-bold text-slate-100 tracking-wider">
+            {isDefaultRRU ? "RASHTRIYA RAKSHA UNIV" : "TARGET TELEMETRY LOCK"}
+          </span>
         </div>
-      )}
+        <div className="text-[11px] space-y-0.5 text-slate-300">
+          <div className="flex justify-between">
+            <span className="text-slate-400">SECTOR:</span>
+            <span className="text-emerald-400 font-semibold">Lavad, Dahegam, GJ</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">COORDINATES:</span>
+            <span className="text-slate-200 font-mono">{activeLat.toFixed(5)}°N, {activeLon.toFixed(5)}°E</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">SURVEILLANCE:</span>
+            <span className={isAlert ? "text-rose-400 font-bold animate-pulse" : "text-emerald-400"}>
+              {isAlert ? "BREACH DETECTED" : "PERIMETER SECURE"}
+            </span>
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-400 pt-0.5 border-t border-slate-800">
+            <span>TARGET NODE:</span>
+            <span className="text-sky-300">{unitId}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Right: Tactical Map Controls Toolbar */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 font-mono text-[11px]">
+        <button
+          onClick={handleRecenter}
+          className="px-2.5 py-1.5 bg-slate-950/90 hover:bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 hover:border-emerald-400 rounded shadow-lg transition flex items-center gap-1.5 backdrop-blur-md"
+          title="Center on Rashtriya Raksha University Base"
+        >
+          <span className="text-xs">🎯</span>
+          <span>RE-CENTER BASE</span>
+        </button>
+        <button
+          onClick={handleToggleRings}
+          className={`px-2.5 py-1.5 border rounded shadow-lg transition flex items-center gap-1.5 backdrop-blur-md ${
+            showRings
+              ? "bg-slate-950/90 text-sky-400 border-sky-500/40 hover:bg-sky-950/70"
+              : "bg-slate-950/60 text-slate-400 border-slate-800 hover:text-slate-200"
+          }`}
+          title="Toggle 100m/300m Tactical Security Rings"
+        >
+          <span className="text-xs">⭕</span>
+          <span>{showRings ? "RINGS: ON" : "RINGS: OFF"}</span>
+        </button>
+      </div>
+
+      {/* Bottom Center: Open Direct Satellite Coordinates */}
+      <div className="absolute bottom-3 left-3 z-[1000] bg-slate-950/90 backdrop-blur-md border border-slate-800 hover:border-sky-500/50 rounded-lg px-2.5 py-1 text-xs text-sky-400 shadow-md">
+        <a
+          href={`https://maps.google.com/?q=${activeLat},${activeLon}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 font-mono font-medium hover:text-sky-300 transition"
+        >
+          <span>🛰️ SATELLITE NAV ↗</span>
+        </a>
+      </div>
     </div>
   );
 }

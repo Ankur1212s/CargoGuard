@@ -1,4 +1,4 @@
-﻿import sqlite3
+import sqlite3
 from datetime import datetime
 from typing import Optional
 from fastapi import FastAPI, Request
@@ -51,7 +51,7 @@ async def receive_reading(request: Request):
     conn.commit()
     conn.close()
 
-    print(f"[{now}] 📡 Telemetry: {temp}C, {hum}%, Gas: {gas}, Dist: {dist}cm (Alert: {alert})")
+    print(f"[{now}] [TELEMETRY] Temp: {temp}C, Hum: {hum}%, Gas: {gas}, Dist: {dist}cm (Alert: {alert})")
     return {"status": "success"}
 
 @app.get("/api/data/latest")
