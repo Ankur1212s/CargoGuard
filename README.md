@@ -33,7 +33,7 @@ flowchart TD
 
     subgraph Network["Cellular & Cloud Infrastructure"]
         Modem -->|"4G LTE Cat-1 (Airtel Band 3/40)\nTLS 1.2 + SNI HTTPS POST"| VercelCloud["Vercel Edge Cloud\n(Next.js 14 App Router)"]
-        Modem -->|"GSM Network (AT+CMGS)"| SMSGateway["Target Commander Mobile\n(+91 91552 70295)"]
+        Modem -->|"GSM Network (AT+CMGS)"| SMSGateway["Target Commander Mobile\n(+91 74918 84517)"]
     end
 
     subgraph WebC2["CargoGuard Tactical Operations Dashboard"]
@@ -110,8 +110,8 @@ Serves active vehicle coordinates, online heartbeat state (computed via a 45-sec
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/Ankur1212s/esp32-sentinel-monitor.git
-cd esp32-sentinel-monitor
+git clone https://github.com/Ankur1212s/CargoGuard.git
+cd CargoGuard
 npm install
 ```
 

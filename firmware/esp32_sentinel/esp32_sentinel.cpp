@@ -19,6 +19,7 @@ const char* SERVER_URL = "https://esp32-sentinel-monitor-187t-ankur1212s.vercel.
 #define DHTPIN        4      // DHT11 Data Pin
 #define DHTTYPE       DHT11
 #define PIR_PIN       32     // PIR Motion Sensor (Active HIGH on motion)
+#define GAS_PIN       34     // MQ-135 Gas / Air Quality Sensor (ADC1 Analog)
 #define GPS_RX_PIN    25     // ESP32 RX1 <- NEO-6M GPS TX
 #define GPS_TX_PIN    26     // ESP32 TX1 -> NEO-6M GPS RX
 #define MODEM_TX_PIN  1      // ESP32 TX0 (GPIO 1) -> A7670C RXD
@@ -287,7 +288,8 @@ void setup() {
   dht.begin();
   pinMode(DHTPIN, INPUT_PULLUP);
   pinMode(PIR_PIN, INPUT_PULLDOWN);
-  Serial.println("[SENSORS] DHT11 on GPIO 4, PIR Sensor on GPIO 32 (PULLDOWN).");
+  pinMode(GAS_PIN, INPUT);
+  Serial.println("[SENSORS] DHT11 (GPIO 4), PIR (GPIO 32), MQ-135 Gas (GPIO 34).");
 
   delay(1500);
   Serial.println("[MODEM] Testing AT communication on TX0/RX0 (115200 baud)...");
@@ -370,10 +372,14 @@ void loop() {
       hum = dht.readHumidity();
     }
 
+    // Read MQ-135 Gas / Air Quality Sensor
+    int gasVal = analogRead(GAS_PIN);
+
     // Diagnostic log to USB Serial Monitor
-    Serial.printf("[DIAG] Temp: %.1fC | Hum: %.1f%% | PIR: %s | Loc: %.4f,%.4f [%s] (Sats: %d, Chars: %lu) | 4G: %s\n",
+    Serial.printf("[DIAG] Temp: %.1fC | Hum: %.1f%% | Gas: %d | PIR: %s | Loc: %.4f,%.4f [%s] (Sats: %d, Chars: %lu) | 4G: %s\n",
       isnan(temp) ? 0.0 : temp,
       isnan(hum) ? 0.0 : hum,
+      gasVal,
       isIntrusion ? "MOTION!" : "CLEAR",
       currentLat,
       currentLon,
@@ -390,7 +396,7 @@ void loop() {
       payload += "\"dist\":0,";
       payload += "\"temp\":" + String(isnan(temp) ? 0.0 : temp, 1) + ",";
       payload += "\"hum\":" + String(isnan(hum) ? 0.0 : hum, 1) + ",";
-      payload += "\"gas\":0,";
+      payload += "\"gas\":" + String(gasVal) + ",";
       payload += "\"lat\":" + String(currentLat, 6) + ",";
       payload += "\"lon\":" + String(currentLon, 6) + ",";
       payload += "\"alert\":" + String(isIntrusion ? "true" : "false") + ",";
