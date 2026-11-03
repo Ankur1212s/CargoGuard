@@ -41,7 +41,15 @@ float currentLon = 72.885000;
 String locationSource = "RRU-VEHICLE";
 
 bool detectMotion() {
-  return digitalRead(PIR_PIN) == HIGH;
+  // Software 3-stage noise debounce: filters out 10-50ms RF burst spikes from 4G uploads
+  if (digitalRead(PIR_PIN) == HIGH) {
+    delay(80);
+    if (digitalRead(PIR_PIN) == HIGH) {
+      delay(80);
+      return (digitalRead(PIR_PIN) == HIGH);
+    }
+  }
+  return false;
 }
 
 // Helper to send AT command to modem on Serial (TX0/RX0) safely
@@ -164,6 +172,7 @@ void initModemNetwork() {
 
 // Send SMS alert via A7670C on Serial
 void sendSMS(String text) {
+  Serial.println("\n[SMS] Initiating SMS dispatch...");
   while (Serial.available()) Serial.read();
 
   sendAT("AT+CSCS=\"GSM\"", 500);
@@ -177,33 +186,43 @@ void sendSMS(String text) {
   // Wait specifically for '>' prompt from modem
   unsigned long start = millis();
   bool promptReady = false;
-  while (millis() - start < 3000) {
+  String modemResp = "";
+  while (millis() - start < 4000) {
     if (Serial.available()) {
       char c = (char)Serial.read();
       if (c == '>') {
         promptReady = true;
         break;
       }
+      if (c != '\0' && modemResp.length() < 128) {
+        modemResp += c;
+      }
     }
+    delay(5);
   }
 
   if (promptReady) {
     Serial.print(text);
+    delay(100);
     Serial.write(26); // ASCII 26 (Ctrl+Z) commits the SMS
-    
-    // Wait for modem to confirm SMS dispatch (+CMGS: or OK)
+    Serial.println("\n[SMS] Submitted with Ctrl+Z. Awaiting network dispatch...");
+
+    // Wait for modem network response and echo to Serial Monitor
     start = millis();
-    String ack = "";
-    while (millis() - start < 10000) {
-      while (Serial.available() > 0) {
+    while (millis() - start < 8000) {
+      if (Serial.available()) {
         char c = (char)Serial.read();
-        if (ack.length() < 128) ack += c;
+        Serial.write(c);
       }
-      if (ack.indexOf("OK") != -1 || ack.indexOf("+CMGS:") != -1) break;
-      delay(50);
+      delay(10);
     }
+    Serial.println("\n[SMS] SMS sequence completed.");
   } else {
     Serial.write(27); // Escape to cancel stuck prompt
+    Serial.print("[SMS] Error: Modem did not return '>' prompt! Response: [");
+    modemResp.trim();
+    Serial.print(modemResp);
+    Serial.println("]");
   }
 }
 
