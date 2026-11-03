@@ -159,18 +159,15 @@ void initModemNetwork() {
   updateCellularLBS();
 
   Serial.println("[BOOT] Modem network online and ready!");
-  sendSMS("✅ CARGOGUARD: Vehicle Tracking System Online!");
+  sendSMS("CARGOGUARD: Vehicle Tracking System Online!");
 }
 
 // Send SMS alert via A7670C on Serial
 void sendSMS(String text) {
-  Serial.println("[SMS] Preparing alert SMS...");
+  while (Serial.available()) Serial.read();
+
   sendAT("AT+CSCS=\"GSM\"", 500);
-  String cmgf = sendAT("AT+CMGF=1", 500);
-  if (cmgf.indexOf("OK") == -1) {
-    Serial.print("[SMS] Warning: AT+CMGF=1: ");
-    Serial.println(cmgf);
-  }
+  sendAT("AT+CMGF=1", 500);
 
   while (Serial.available()) Serial.read();
   Serial.print("AT+CMGS=\"");
@@ -180,7 +177,6 @@ void sendSMS(String text) {
   // Wait specifically for '>' prompt from modem
   unsigned long start = millis();
   bool promptReady = false;
-  String modemResp = "";
   while (millis() - start < 3000) {
     if (Serial.available()) {
       char c = (char)Serial.read();
@@ -188,24 +184,26 @@ void sendSMS(String text) {
         promptReady = true;
         break;
       }
-      if (c != '\0' && modemResp.length() < 128) {
-        modemResp += c;
-      }
     }
   }
 
   if (promptReady) {
     Serial.print(text);
-    Serial.write(26); // ASCII 26 (Ctrl+Z) sends SMS
-    Serial.println("[SMS] SMS submitted, waiting for network dispatch...");
-    delay(3000);
-    Serial.println("[SMS] SMS dispatched successfully!");
+    Serial.write(26); // ASCII 26 (Ctrl+Z) commits the SMS
+    
+    // Wait for modem to confirm SMS dispatch (+CMGS: or OK)
+    start = millis();
+    String ack = "";
+    while (millis() - start < 10000) {
+      while (Serial.available() > 0) {
+        char c = (char)Serial.read();
+        if (ack.length() < 128) ack += c;
+      }
+      if (ack.indexOf("OK") != -1 || ack.indexOf("+CMGS:") != -1) break;
+      delay(50);
+    }
   } else {
     Serial.write(27); // Escape to cancel stuck prompt
-    Serial.print("[SMS] Error: Modem did not return '>' prompt! Response: [");
-    modemResp.trim();
-    Serial.print(modemResp);
-    Serial.println("]");
   }
 }
 
@@ -350,12 +348,12 @@ void loop() {
 
   if (isIntrusion) {
     if (modemOnline && (millis() - lastSmsTime > SMS_COOLDOWN_MS)) {
-      Serial.println("[PIR] Motion detected! Firing alert SMS...");
-      String msg = "🚨 CARGOGUARD ALERT: Cargo Container Tamper / Motion Detected!\n";
+      String msg = "CARGOGUARD ALERT: Cargo Container Tamper Detected!\n";
       msg += "PIR motion sensor inside cargo triggered.\n";
       msg += "Vehicle Location: " + getGoogleMapsLink();
       sendSMS(msg);
       lastSmsTime = millis();
+      lastUploadTime = millis(); // Defer HTTP telemetry to allow clean SMS dispatch
     }
   }
 

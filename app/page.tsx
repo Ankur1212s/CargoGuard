@@ -490,7 +490,7 @@ export default function CargoGuardDashboard() {
                   </span>
                 </div>
                 <p className="text-xs text-rose-200 font-mono mt-0.5">
-                  Motion verified inside cargo container at vehicle location: <strong>Rashtriya Raksha University (RRU Lavad Campus)</strong>. GSM Alert SMS dispatched to +91 91552 70295.
+                  Motion verified inside cargo container at vehicle location: <strong>Rashtriya Raksha University (RRU Lavad Campus)</strong>. GSM Alert SMS dispatched to +91 74918 84517.
                 </p>
               </div>
             </div>
