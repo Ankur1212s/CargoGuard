@@ -5,7 +5,7 @@
 
 // ================= USER CONFIGURATION =================
 // 1. Mobile number to receive intrusion SMS (with country code):
-#define TARGET_PHONE_NUMBER "+919155270295"
+#define TARGET_PHONE_NUMBER "+917491884517"
 
 // 2. Telemetry Ingestion Endpoint:
 const char* SERVER_URL = "https://esp32-sentinel-monitor-187t-ankur1212s.vercel.app/api/readings";
