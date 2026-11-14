@@ -11,7 +11,7 @@
 const char* SERVER_URL = "https://esp32-sentinel-monitor-187t-ankur1212s.vercel.app/api/readings";
 
 #define UNIT_CALLSIGN         "CARGOGUARD-01"
-#define UPLOAD_INTERVAL_MS    7000   // Telemetry upload interval (7 seconds)
+#define UPLOAD_INTERVAL_MS    9000   // Telemetry upload interval (9 seconds - stable carrier socket)
 #define SMS_COOLDOWN_MS       30000  // Minimum cooldown between SMS alerts (30 seconds)
 // ======================================================
 
@@ -34,6 +34,8 @@ unsigned long lastUploadTime = 0;
 unsigned long lastSmsTime = 0;
 unsigned long lastModemRetry = 0;
 unsigned long lastLbsCheck = 0;
+int httpFailCount = 0;
+bool initialBootSmsSent = false;
 
 // Default vehicle location: Rashtriya Raksha University (RRU), Lavad, Dahegam
 float currentLat = 23.154455;
@@ -167,7 +169,10 @@ void initModemNetwork() {
   updateCellularLBS();
 
   Serial.println("[BOOT] Modem network online and ready!");
-  sendSMS("CARGOGUARD: Vehicle Tracking System Online!");
+  if (!initialBootSmsSent) {
+    sendSMS("CARGOGUARD: Vehicle Tracking System Online!");
+    initialBootSmsSent = true;
+  }
 }
 
 // Send SMS alert via A7670C on Serial
@@ -268,18 +273,27 @@ void postTelemetryToCloud(String json) {
 
     if (actionResp.indexOf(",200,") != -1 || actionResp.indexOf(",200") != -1) {
       Serial.println("[HTTP] Upload Success: 200 OK!");
+      httpFailCount = 0; // Reset error counter on successful upload
     } else {
       Serial.print("[HTTP] Upload Result: ");
       Serial.println(actionResp);
-      String body = sendAT("AT+HTTPREAD", 1500);
-      Serial.print("[HTTP] Server Response: ");
-      Serial.println(body);
+      httpFailCount++;
     }
   } else {
     Serial.println("[HTTP] Modem not ready for DOWNLOAD prompt. Skipping.");
+    httpFailCount++;
   }
 
   sendAT("AT+HTTPTERM", 300);
+
+  // Self-Healing Network Watchdog: automatically recovers when Airtel carrier drops the socket
+  if (httpFailCount >= 3) {
+    Serial.printf("\n[WATCHDOG] Cellular link interrupted (%d failures). Re-establishing 4G socket...\n", httpFailCount);
+    sendAT("AT+NETCLOSE", 800);
+    delay(500);
+    sendAT("AT+NETOPEN", 2500);
+    httpFailCount = 0;
+  }
 }
 
 void setup() {
