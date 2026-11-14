@@ -39,7 +39,7 @@ bool initialBootSmsSent = false;
 // Default vehicle location: Rashtriya Raksha University (RRU), Lavad, Dahegam
 float currentLat = 23.154455;
 float currentLon = 72.885000;
-String locationSource = "RRU-VEHICLE";
+String locationSource = "CELL_TOWER";
 
 bool detectMotion() {
   // Software 3-stage noise debounce: filters out 10-50ms RF burst spikes from 4G uploads
@@ -164,8 +164,10 @@ void initModemNetwork() {
   sendAT("AT+CSSLCFG=\"authmode\",0,0", 400);
   sendAT("AT+CSSLCFG=\"enableSNI\",0,1", 400);
 
-  // Query initial cellular triangulation location
-  updateCellularLBS();
+  // Query 4G physical cell tower
+  Serial.println("[CELL-TOWER] Querying physical cell tower mast info (AT+CPSI?)...");
+  String cpsi = sendAT("AT+CPSI?", 1000);
+  Serial.println(cpsi);
 
   Serial.println("[BOOT] Modem network online and ready!");
   if (!initialBootSmsSent) {
@@ -416,6 +418,7 @@ void loop() {
       payload += "\"gas\":0,";
       payload += "\"lat\":" + String(currentLat, 6) + ",";
       payload += "\"lon\":" + String(currentLon, 6) + ",";
+      payload += "\"source\":\"" + locationSource + "\",";
       payload += "\"alert\":" + String(isIntrusion ? "true" : "false") + ",";
       payload += "\"motion\":" + String(isIntrusion ? "true" : "false");
       payload += "}";

@@ -17,6 +17,7 @@ export interface TelemetryReading {
   motion?: boolean;
   battery_mv?: number;
   signal_rssi?: number;
+  loc_source?: string;
 }
 
 declare global {
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
       motion: Boolean(data.motion === true || data.motion === "true" || data.motion === 1 || data.motion === "1"),
       battery_mv: data.battery_mv ? parseInt(data.battery_mv) : 3930,
       signal_rssi: data.signal_rssi ? parseInt(data.signal_rssi) : 22,
+      loc_source: data.source ? String(data.source) : "CELL_TOWER",
     };
 
     store.push(reading);
@@ -131,6 +133,7 @@ export async function GET(req: NextRequest) {
     motion: false,
     battery_mv: 3930,
     signal_rssi: 22,
+    loc_source: "CELL_TOWER",
   };
 
   const hasRealData = store.length > 0;

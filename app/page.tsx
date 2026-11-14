@@ -77,6 +77,7 @@ interface Reading {
   motion?: boolean;
   battery_mv?: number;
   signal_rssi?: number;
+  loc_source?: string;
 }
 
 // Default Vehicle Coordinates: Rashtriya Raksha University, Lavad, Dahegam, Gandhinagar
@@ -679,6 +680,7 @@ export default function CargoGuardDashboard() {
                 isAlert={isBreached}
                 isOnline={isOnline}
                 trailCoords={trailCoords}
+                locSource={latest?.loc_source || "CELL_TOWER"}
               />
             </div>
           </div>
