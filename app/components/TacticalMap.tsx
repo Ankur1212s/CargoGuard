@@ -41,6 +41,48 @@ export default function TacticalMap({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
+    // Custom Military Tactical Marker Icon: Precision Reticle for GPS vs Cellular Tower for LBS
+    const buildMarkerIcon = (alert: boolean, online: boolean, gps: boolean) => {
+      if (gps) {
+        const ringColor = alert ? "border-rose-500 bg-rose-500/20" : online ? "border-emerald-400 bg-emerald-500/15" : "border-amber-400 bg-amber-500/15";
+        const centerColor = alert ? "bg-rose-600 border-rose-200" : online ? "bg-emerald-500 border-white" : "bg-amber-500 border-zinc-900";
+
+        return L.divIcon({
+          className: "military-marker-reticle",
+          html: `
+            <div class="relative flex items-center justify-center w-12 h-12 -ml-3 -mt-3 pointer-events-none">
+              <div class="absolute inset-0 rounded-full border ${ringColor} ${alert ? 'animate-ping' : 'animate-pulse'}"></div>
+              <div class="absolute w-8 h-8 rounded-full border border-dashed ${alert ? 'border-rose-400' : 'border-emerald-400/80'} animate-spin" style="animation-duration: 8s;"></div>
+              <div class="absolute w-10 h-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
+              <div class="absolute h-10 w-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
+              <div class="w-3.5 h-3.5 rounded-full ${centerColor} border-2 relative z-20 shadow-[0_0_12px_rgba(16,185,129,0.8)]"></div>
+            </div>
+          `,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+      } else {
+        // Cellular Base Station Tower Icon with Radiating Radar Waves
+        return L.divIcon({
+          className: "cellular-tower-marker",
+          html: `
+            <div class="relative flex items-center justify-center w-14 h-14 -ml-4 -mt-4 pointer-events-none">
+              <div class="absolute inset-0 rounded-full border border-sky-400/60 bg-sky-500/15 animate-ping" style="animation-duration: 3s;"></div>
+              <div class="absolute w-9 h-9 rounded-full border border-sky-400/80 bg-sky-950/80 flex items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.8)]">
+                <span style="font-size: 16px;">📡</span>
+              </div>
+            </div>
+          `,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+      }
+    };
+
+    const isGps = locSource === "GPS";
+    const primaryRadius = isGps ? 100 : 750;
+    const outerRadius = isGps ? 300 : 1200;
+
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
         center: [activeLat, activeLon],
@@ -60,48 +102,6 @@ export default function TacticalMap({
 
       // Add zoom control at bottom right to avoid blocking top tactical telemetry
       L.control.zoom({ position: "bottomright" }).addTo(map);
-
-      // Custom Military Tactical Marker Icon: Precision Reticle for GPS vs Cellular Tower for LBS
-      const buildMarkerIcon = (alert: boolean, online: boolean, gps: boolean) => {
-        if (gps) {
-          const ringColor = alert ? "border-rose-500 bg-rose-500/20" : online ? "border-emerald-400 bg-emerald-500/15" : "border-amber-400 bg-amber-500/15";
-          const centerColor = alert ? "bg-rose-600 border-rose-200" : online ? "bg-emerald-500 border-white" : "bg-amber-500 border-zinc-900";
-
-          return L.divIcon({
-            className: "military-marker-reticle",
-            html: `
-              <div class="relative flex items-center justify-center w-12 h-12 -ml-3 -mt-3 pointer-events-none">
-                <div class="absolute inset-0 rounded-full border ${ringColor} ${alert ? 'animate-ping' : 'animate-pulse'}"></div>
-                <div class="absolute w-8 h-8 rounded-full border border-dashed ${alert ? 'border-rose-400' : 'border-emerald-400/80'} animate-spin" style="animation-duration: 8s;"></div>
-                <div class="absolute w-10 h-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
-                <div class="absolute h-10 w-[1px] ${alert ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75"></div>
-                <div class="w-3.5 h-3.5 rounded-full ${centerColor} border-2 relative z-20 shadow-[0_0_12px_rgba(16,185,129,0.8)]"></div>
-              </div>
-            `,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-          });
-        } else {
-          // Cellular Base Station Tower Icon with Radiating Radar Waves
-          return L.divIcon({
-            className: "cellular-tower-marker",
-            html: `
-              <div class="relative flex items-center justify-center w-14 h-14 -ml-4 -mt-4 pointer-events-none">
-                <div class="absolute inset-0 rounded-full border border-sky-400/60 bg-sky-500/15 animate-ping" style="animation-duration: 3s;"></div>
-                <div class="absolute w-9 h-9 rounded-full border border-sky-400/80 bg-sky-950/80 flex items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.8)]">
-                  <span style="font-size: 16px;">📡</span>
-                </div>
-              </div>
-            `,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-          });
-        }
-      };
-
-      const isGps = locSource === "GPS";
-      const primaryRadius = isGps ? 100 : 750;
-      const outerRadius = isGps ? 300 : 1200;
 
       const marker = L.marker([activeLat, activeLon], {
         icon: buildMarkerIcon(isAlert, isOnline, isGps),
