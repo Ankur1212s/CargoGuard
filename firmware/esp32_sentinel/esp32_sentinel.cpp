@@ -129,9 +129,9 @@ bool updateCellularLBS() {
 // Generate Google Maps link
 String getGoogleMapsLink() {
   if (currentLat != 0.0 && currentLon != 0.0) {
-    return "https://maps.google.com/?q=" + String(currentLat, 6) + "," + String(currentLon, 6) + " (" + locationSource + ")";
+    return "https://maps.google.com/?q=" + String(currentLat, 6) + "," + String(currentLon, 6);
   }
-  return "Location searching...";
+  return "Searching...";
 }
 
 // Forward declaration
@@ -172,7 +172,6 @@ void initModemNetwork() {
 
 // Send SMS alert via A7670C on Serial
 void sendSMS(String text) {
-  Serial.println("\n[SMS] Initiating SMS dispatch...");
   while (Serial.available()) Serial.read();
 
   sendAT("AT+CSCS=\"GSM\"", 500);
@@ -186,16 +185,12 @@ void sendSMS(String text) {
   // Wait specifically for '>' prompt from modem
   unsigned long start = millis();
   bool promptReady = false;
-  String modemResp = "";
-  while (millis() - start < 4000) {
+  while (millis() - start < 3000) {
     if (Serial.available()) {
       char c = (char)Serial.read();
       if (c == '>') {
         promptReady = true;
         break;
-      }
-      if (c != '\0' && modemResp.length() < 128) {
-        modemResp += c;
       }
     }
     delay(5);
@@ -205,25 +200,23 @@ void sendSMS(String text) {
     Serial.print(text);
     delay(100);
     Serial.write(26); // ASCII 26 (Ctrl+Z) commits the SMS
-    Serial.println("\n[SMS] Submitted with Ctrl+Z. Awaiting network dispatch...");
 
-    // Wait for modem network response and echo to Serial Monitor
+    // Wait for modem network dispatch to complete without echoing bytes back into RXD
     start = millis();
     while (millis() - start < 8000) {
       if (Serial.available()) {
         char c = (char)Serial.read();
-        Serial.write(c);
+        if (c == 'K') break; // "OK" received from modem
       }
-      delay(10);
+      delay(20);
     }
-    Serial.println("\n[SMS] SMS sequence completed.");
   } else {
-    Serial.write(27); // Escape to cancel stuck prompt
-    Serial.print("[SMS] Error: Modem did not return '>' prompt! Response: [");
-    modemResp.trim();
-    Serial.print(modemResp);
-    Serial.println("]");
+    Serial.write(27); // Escape (0x1B) cancels stuck prompt
   }
+
+  // Allow UART bus to settle and clear any trailing characters
+  delay(300);
+  while (Serial.available()) Serial.read();
 }
 
 // Upload JSON payload over 4G LTE to Backend
@@ -367,9 +360,8 @@ void loop() {
 
   if (isIntrusion) {
     if (modemOnline && (millis() - lastSmsTime > SMS_COOLDOWN_MS)) {
-      String msg = "CARGOGUARD ALERT: Cargo Container Tamper Detected!\n";
-      msg += "PIR motion sensor inside cargo triggered.\n";
-      msg += "Vehicle Location: " + getGoogleMapsLink();
+      String msg = "CARGOGUARD ALERT: Cargo Tamper Detected!\n";
+      msg += "Location: " + getGoogleMapsLink();
       sendSMS(msg);
       lastSmsTime = millis();
       lastUploadTime = millis(); // Defer HTTP telemetry to allow clean SMS dispatch
