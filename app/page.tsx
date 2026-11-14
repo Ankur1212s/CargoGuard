@@ -196,25 +196,14 @@ export default function CargoGuardDashboard() {
       ),
       datasets: [
         {
-          label: "Gas Concentration (PPM)",
-          data: slice.map((r) => r.gas || 0),
-          borderColor: "#10b981",
-          backgroundColor: "rgba(16, 185, 129, 0.08)",
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: "#10b981",
-          fill: true,
-          tension: 0.2,
-          yAxisID: "y1",
-        },
-        {
           label: "Cargo Ambient Temp (°C)",
           data: slice.map((r) => r.temp || 0),
           borderColor: "#f59e0b",
-          backgroundColor: "transparent",
+          backgroundColor: "rgba(245, 158, 11, 0.08)",
           borderWidth: 2,
           pointRadius: 3,
           pointBackgroundColor: "#f59e0b",
+          fill: true,
           tension: 0.2,
           yAxisID: "y",
         },
@@ -267,18 +256,6 @@ export default function CargoGuardDashboard() {
           display: true,
           text: "Temp (°C) / Hum (%)",
           color: "#64748b",
-          font: { family: "monospace", size: 10 },
-        },
-      },
-      y1: {
-        type: "linear" as const,
-        position: "right" as const,
-        grid: { drawOnChartArea: false },
-        ticks: { color: "#10b981", font: { family: "monospace", size: 10 } },
-        title: {
-          display: true,
-          text: "Gas (PPM)",
-          color: "#10b981",
           font: { family: "monospace", size: 10 },
         },
       },
@@ -546,39 +523,34 @@ export default function CargoGuardDashboard() {
             </div>
           </div>
 
-          {/* Panel 2: CBRN Hazardous Gas in Cargo (MQ-135) */}
-          <div className="military-panel rounded-xl p-3.5 flex flex-col justify-between hover:border-emerald-500/60 transition">
+          {/* Panel 2: Cargo Hatch / Perimeter Integrity */}
+          <div className={`military-panel rounded-xl p-3.5 flex flex-col justify-between transition ${
+            isBreached ? "border-rose-500/80 bg-rose-950/20" : "hover:border-emerald-500/60"
+          }`}>
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span className="tracking-wider">CARGO GAS / AIR</span>
-              <Wind className="w-4 h-4 text-emerald-400" />
+              <span className="tracking-wider">CARGO HATCH / DOOR</span>
+              {isBreached ? (
+                <ShieldAlert className="w-4 h-4 text-rose-400 animate-pulse" />
+              ) : (
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              )}
             </div>
             <div className="my-2.5">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-mono font-bold text-emerald-300">
-                  {latest?.gas !== undefined ? Math.round(latest.gas) : "310"}
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-mono font-bold ${
+                  isBreached ? "text-rose-400 animate-pulse" : "text-emerald-300"
+                }`}>
+                  {isBreached ? "BREACHED" : "SECURED"}
                 </span>
-                <span className="text-xs font-mono text-slate-400">PPM</span>
               </div>
-              {/* Tactical Progress Bar */}
-              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    (latest?.gas || 0) > 800
-                      ? "bg-rose-500"
-                      : (latest?.gas || 0) > 500
-                      ? "bg-amber-400"
-                      : "bg-emerald-400"
-                  }`}
-                  style={{
-                    width: `${Math.min(100, Math.max(15, ((latest?.gas || 310) / 1000) * 100))}%`,
-                  }}
-                ></div>
+              <div className="text-[11px] font-mono text-slate-400 mt-1">
+                {isBreached ? "Perimeter seal violated!" : "Perimeter seal intact"}
               </div>
             </div>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-1.5 flex justify-between">
-              <span>MQ-135 SENSOR</span>
-              <span className="text-emerald-400 font-semibold">
-                {(latest?.gas || 0) > 800 ? "HAZARD" : "NOMINAL"}
+              <span>TAMPER SWITCH</span>
+              <span className={isBreached ? "text-rose-400 font-semibold" : "text-emerald-400 font-semibold"}>
+                {isBreached ? "ALERT STATE" : "ARMED"}
               </span>
             </div>
           </div>
@@ -728,9 +700,9 @@ export default function CargoGuardDashboard() {
             {/* Channel Metrics Summary Bar */}
             <div className="grid grid-cols-3 gap-2 mb-3 text-[11px] font-mono">
               <div className="bg-[#080d16] border border-emerald-500/30 rounded p-2 text-center">
-                <div className="text-slate-400 text-[10px]">GAS PEAK</div>
-                <div className="text-emerald-400 font-bold mt-0.5">
-                  {readings.length > 0 ? Math.max(...readings.map((r) => r.gas || 0)) : 310} PPM
+                <div className="text-slate-400 text-[10px]">CARGO HATCH</div>
+                <div className={`font-bold mt-0.5 ${isBreached ? "text-rose-400" : "text-emerald-400"}`}>
+                  {isBreached ? "BREACHED" : "SECURED"}
                 </div>
               </div>
               <div className="bg-[#080d16] border border-amber-500/30 rounded p-2 text-center">
@@ -828,7 +800,7 @@ export default function CargoGuardDashboard() {
                   <th className="py-2.5 px-3">TIMESTAMP (UTC)</th>
                   <th className="py-2.5 px-3">VEHICLE CALLSIGN</th>
                   <th className="py-2.5 px-3">CARGO TAMPER</th>
-                  <th className="py-2.5 px-3">GAS (MQ135)</th>
+                  <th className="py-2.5 px-3">PERIMETER HATCH</th>
                   <th className="py-2.5 px-3">TEMP / HUM</th>
                   <th className="py-2.5 px-3">VEHICLE LOCATION</th>
                   <th className="py-2.5 px-3 text-right">SECURITY STATE</th>
@@ -874,8 +846,12 @@ export default function CargoGuardDashboard() {
                             </span>
                           )}
                         </td>
-                        <td className="py-2 px-3 text-emerald-400 font-semibold">
-                          {Math.round(r.gas || 0)} PPM
+                        <td className="py-2 px-3 font-semibold">
+                          {r.alert || r.motion ? (
+                            <span className="text-rose-400">UNLOCKED / OPEN</span>
+                          ) : (
+                            <span className="text-emerald-400">SEALED / CLOSED</span>
+                          )}
                         </td>
                         <td className="py-2 px-3 text-slate-300">
                           {r.temp > 0 ? `${r.temp.toFixed(1)}°C / ${r.hum.toFixed(1)}%` : "27.0°C / 52.0%"}
